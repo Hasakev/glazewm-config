@@ -10,7 +10,8 @@ A Hyprland-style keymap and look for Windows 11, built on [GlazeWM](https://gith
 The script:
 
 - unpacks the signed GlazeWM and Zebar release MSIs into `%LOCALAPPDATA%\Programs`;
-- adds the GlazeWM CLI to your `PATH` (as the official installer does; Zebar uses it to pick its GlazeWM bar);
+- adds the GlazeWM CLI to your `PATH` (as the official installer does);
+- links this repo's `zebar` folder into `%USERPROFILE%\.glzr\zebar\hypr-bar` and sets it as the only bar Zebar starts (this replaces any choice made in Zebar's own settings);
 - sets `GLAZEWM_CONFIG_PATH` to this folder's `config.yaml`;
 - starts GlazeWM at login (the same setting as the tray's "Run on system startup");
 - adds a GlazeWM Start-menu entry with the shortcut `Ctrl+Alt+G`;
@@ -46,6 +47,20 @@ Once running, GlazeWM tiles every open window. `Win+Shift+P` pauses and resumes 
 
 Left to Windows: `Win+L` lock, `Win+V` clipboard, `Win+A` quick settings, `Win+N` notifications, `Win+W` widgets, `Win+E` Explorer, `Win+R` Run, `Print` and media keys.
 
+## Bar
+
+The Zebar bar (`zebar/bar.html`, `zebar/styles.css`) shows, from left to right:
+
+- a Start button (opens the Windows Start menu, after about a second), workspaces (click to switch) and the focused window's title;
+- the date and time in the middle;
+- media controls, weather, CPU and memory use, network, volume (click to mute, scroll to change), battery, the system tray and a power button.
+
+The power button opens Lock, Sleep, Sign out, Restart and Shut down. Sign out, Restart and Shut down need a second click within 4 seconds.
+
+The taskbar stays on auto-hide: Windows 11 brings it back when Start opens or the mouse touches the bottom edge, so it cannot be hidden permanently without patching Explorer.
+
+Edits to the bar take effect when Zebar restarts. GlazeWM starts and stops Zebar, so press `Win+Esc` then `Ctrl+Alt+G`.
+
 ## Editing
 
 Edit `config.yaml` in this folder, then press `Win+Shift+R`. GlazeWM shows an error if the config is invalid. All options are documented in GlazeWM's [sample config](https://github.com/glzr-io/glazewm/blob/v3.10.1/resources/assets/sample-config.yaml).
@@ -55,6 +70,8 @@ Edit `config.yaml` in this folder, then press `Win+Shift+R`. GlazeWM shows an er
 Exit GlazeWM (`Win+Esc`), turn off "Automatically hide the taskbar" in Settings, then in PowerShell:
 
 ```powershell
+# Remove the bar link first, without -Recurse, so the repo's files are kept.
+(Get-Item "$env:USERPROFILE\.glzr\zebar\hypr-bar").Delete()
 Remove-Item "$env:LOCALAPPDATA\Programs\GlazeWM", "$env:LOCALAPPDATA\Programs\Zebar" -Recurse
 Remove-Item "$([Environment]::GetFolderPath('Programs'))\GlazeWM.lnk"
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name GlazeWM

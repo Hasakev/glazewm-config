@@ -53,6 +53,26 @@ if (($userPath -split ';') -notcontains $cliDir) {
 }
 $env:Path = "$env:Path;$cliDir"
 
+# 3b. Link this repo's bar into Zebar's config folder (a junction, so edits
+#     here are live) and make it the only widget Zebar starts. This replaces
+#     whatever was chosen in Zebar's own settings screen.
+$zebarDir = Join-Path $env:USERPROFILE '.glzr\zebar'
+$barLink = Join-Path $zebarDir 'hypr-bar'
+$barSrc = Join-Path $PSScriptRoot 'zebar'
+New-Item -ItemType Directory -Force $zebarDir | Out-Null
+$existing = Get-Item $barLink -Force -ErrorAction SilentlyContinue
+if ($existing -and $existing.LinkType -eq 'Junction' -and $existing.Target -ne $barSrc) {
+    # Never Remove-Item -Recurse a junction: PowerShell 5.1 can delete the target's files.
+    $existing.Delete()
+    $existing = $null
+}
+if (-not $existing) {
+    New-Item -ItemType Junction -Path $barLink -Target $barSrc | Out-Null
+} elseif ($existing.LinkType -ne 'Junction') {
+    throw "$barLink exists and is not a link. Move it away and run again."
+}
+Set-Content (Join-Path $zebarDir 'settings.json') -Encoding ASCII -Value '{ "startupConfigs": [{ "pack": "hypr-bar", "widget": "bar", "preset": "default" }] }'
+
 # 4. Point GlazeWM at this repo's config.
 [Environment]::SetEnvironmentVariable('GLAZEWM_CONFIG_PATH', $config, 'User')
 $env:GLAZEWM_CONFIG_PATH = $config

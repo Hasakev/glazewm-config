@@ -1,0 +1,44 @@
+{
+  "$schema": "https://github.com/glzr-io/zebar/raw/v3.3.1/resources/zpack-schema.json",
+  "name": "hypr-bar",
+  "version": "1.0.0",
+  "description": "Hyprland-style top bar for GlazeWM: Start and power menu, workspaces, system tray.",
+  "tags": ["topbar", "glazewm"],
+  "previewImages": [],
+  "repositoryUrl": "https://github.com/Hasakev/glazewm-config",
+  "widgets": [
+    {
+      "name": "bar",
+      "htmlPath": "./bar.html",
+      "zOrder": "normal",
+      "shownInTaskbar": false,
+      "focused": false,
+      "resizable": false,
+      "transparent": true,
+      "includeFiles": ["*.html", "*.css"],
+      "caching": { "defaultDuration": 604800, "rules": [] },
+      "privileges": {
+        "shellCommands": [
+          {
+            "program": "powershell",
+            "argsRegex": "^-NoProfile -NonInteractive -EncodedCommand (KABOAGUAdwAtAE8AYgBqAGUAYwB0ACAALQBDAG8AbQBPAGIAagBlAGMAdAAgAFcAUwBjAHIAaQBwAHQALgBTAGgAZQBsAGwAKQAuAFMAZQBuAGQASwBlAHkAcwAoACcAXgB7AEUAUwBDAH0AJwApAA==|QQBkAGQALQBUAHkAcABlACAALQBBAHMAcwBlAG0AYgBsAHkATgBhAG0AZQAgAFMAeQBzAHQAZQBtAC4AVwBpAG4AZABvAHcAcwAuAEYAbwByAG0AcwA7ACAAWwB2AG8AaQBkAF0AWwBTAHkAcwB0AGUAbQAuAFcAaQBuAGQAbwB3AHMALgBGAG8AcgBtAHMALgBBAHAAcABsAGkAYwBhAHQAaQBvAG4AXQA6ADoAUwBlAHQAUwB1AHMAcABlAG4AZABTAHQAYQB0AGUAKAAnAFMAdQBzAHAAZQBuAGQAJwAsACAAJABmAGEAbABzAGUALAAgACQAZgBhAGwAcwBlACkA)$"
+          },
+          { "program": "rundll32", "argsRegex": "^user32\\.dll,LockWorkStation$" },
+          { "program": "shutdown", "argsRegex": "^(/s /t 0|/r /t 0|/l)$" }
+        ]
+      },
+      "presets": [
+        {
+          "name": "default",
+          "anchor": "top_left",
+          "offsetX": "0px",
+          "offsetY": "0px",
+          "width": "100%",
+          "height": "40px",
+          "monitorSelection": { "type": "all" },
+          "dockToEdge": { "enabled": false, "edge": null, "windowMargin": "0px" }
+        }
+      ]
+    }
+  ]
+}

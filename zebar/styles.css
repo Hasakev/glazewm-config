@@ -1,0 +1,182 @@
+/* Nerd Font icons: https://www.nerdfonts.com/cheat-sheet */
+@import 'https://www.nerdfonts.com/assets/css/webfont.css';
+
+:root {
+  --accent: #0078d4;
+  --block: rgb(18 20 28 / 82%);
+  --block-hover: rgb(40 44 58 / 90%);
+  --border: rgb(255 255 255 / 7%);
+  --text: rgb(235 238 245 / 95%);
+  --muted: rgb(160 170 190 / 90%);
+  --warn: #e5534b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  color: var(--text);
+  font: 12.5px 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 100%;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.left,
+.right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.right {
+  justify-content: flex-end;
+}
+
+/* Each module is a floating rounded block, Hyprland style. */
+.mod {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background: var(--block);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+button.mod:hover,
+.mod button:hover {
+  background: var(--block-hover);
+}
+
+i.nf {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.start i.nf {
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.title {
+  min-width: 0;
+  max-width: 32vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.clock {
+  font-weight: 600;
+}
+
+.workspaces {
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.ws {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  color: var(--muted);
+}
+
+.ws.displayed {
+  color: var(--text);
+  background: rgb(255 255 255 / 8%);
+}
+
+.ws.focused {
+  color: #fff;
+  background: var(--accent);
+}
+
+.ws.paused {
+  color: #fff;
+  background: var(--warn);
+}
+
+.media button,
+.power button {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 4px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.media button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.track {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tray {
+  gap: 4px;
+}
+
+.tray img {
+  width: 16px;
+  height: 16px;
+  padding: 3px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tray img:hover {
+  background: var(--block-hover);
+}
+
+.power {
+  padding: 0 3px;
+  gap: 2px;
+}
+
+.power button.armed {
+  background: var(--warn);
+  color: #fff;
+}
+
+.power button.armed i.nf {
+  color: #fff;
+}
+
+.warn {
+  color: var(--warn);
+}
