@@ -38,7 +38,7 @@ Left to Windows: `Win+L` lock, `Win+V` clipboard, `Win+A` quick settings, `Win+N
 
 ## Editing
 
-Edit `config.yaml` in this folder, then press `Win+Shift+R`. GlazeWM shows an error if the config is invalid. All options are documented in GlazeWM's [sample config](https://github.com/glzr-io/glazewm/blob/main/resources/assets/sample-config.yaml).
+Edit `config.yaml` in this folder, then press `Win+Shift+R`. GlazeWM shows an error if the config is invalid. All options are documented in GlazeWM's [sample config](https://github.com/glzr-io/glazewm/blob/v3.10.1/resources/assets/sample-config.yaml).
 
 ## Uninstall
 

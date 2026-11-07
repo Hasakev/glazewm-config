@@ -2,6 +2,7 @@
 # config.yaml and starts it at login. Run from the folder you intend to keep:
 # GlazeWM reads the config from here. Re-run to upgrade after changing $version.
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'  # Progress bar makes downloads very slow in PowerShell 5.1.
 
 $version = 'v3.10.1'  # v3.2.0+ needed so Win-key bindings don't pop the Start menu.
 $config = Join-Path $PSScriptRoot 'config.yaml'
@@ -10,7 +11,7 @@ $exe = Join-Path $dir 'glazewm.exe'
 
 # 1. Stop a running instance cleanly (so windows hidden on other workspaces
 #    are restored and the exe can be replaced).
-$running = Get-Process glazewm -ErrorAction SilentlyContinue
+$running = Get-Process glazewm, glazewm-watcher -ErrorAction SilentlyContinue
 if ($running) {
     & (Join-Path $dir 'cli\glazewm.exe') command wm-exit
     $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
@@ -21,8 +22,9 @@ if ($running) {
 $tmp = Join-Path $env:TEMP "glazewm-$version"
 $msi = Join-Path $tmp 'glazewm.msi'
 New-Item -ItemType Directory -Force $tmp | Out-Null
-Invoke-WebRequest "https://github.com/glzr-io/glazewm/releases/download/$version/standalone-glazewm-$version-x64.msi" -OutFile $msi
-if ((Get-AuthenticodeSignature $msi).Status -ne 'Valid') { throw "MSI signature is not valid: $msi" }
+Invoke-WebRequest "https://github.com/glzr-io/glazewm/releases/download/$version/standalone-glazewm-$version-x64.msi" -OutFile $msi -UseBasicParsing
+$sig = Get-AuthenticodeSignature $msi
+if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike '*GLZR SOFTWARE*') { throw "MSI is not signed by GLZR Software: $msi" }
 $p = Start-Process msiexec -ArgumentList '/a', "`"$msi`"", '/qn', "TARGETDIR=`"$tmp\x`"" -Wait -PassThru
 if ($p.ExitCode -ne 0) { throw "msiexec unpack failed with exit code $($p.ExitCode)." }
 New-Item -ItemType Directory -Force $dir | Out-Null
