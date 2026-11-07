@@ -10,7 +10,7 @@ A Hyprland-style keymap and look for Windows 11, built on [GlazeWM](https://gith
 The script:
 
 - unpacks the signed GlazeWM and Zebar release MSIs into `%LOCALAPPDATA%\Programs`;
-- sets Zebar to show its GlazeWM bar (only if you have no Zebar settings yet);
+- adds the GlazeWM CLI to your `PATH` (as the official installer does; Zebar uses it to pick its GlazeWM bar);
 - sets `GLAZEWM_CONFIG_PATH` to this folder's `config.yaml`;
 - starts GlazeWM at login (the same setting as the tray's "Run on system startup");
 - adds a GlazeWM Start-menu entry with the shortcut `Ctrl+Alt+G`;
@@ -59,4 +59,5 @@ Remove-Item "$env:LOCALAPPDATA\Programs\GlazeWM", "$env:LOCALAPPDATA\Programs\Ze
 Remove-Item "$([Environment]::GetFolderPath('Programs'))\GlazeWM.lnk"
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name GlazeWM
 [Environment]::SetEnvironmentVariable('GLAZEWM_CONFIG_PATH', $null, 'User')
+[Environment]::SetEnvironmentVariable('Path', (([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -ne "$env:LOCALAPPDATA\Programs\GlazeWM\cli") -join ';', 'User')
 ```

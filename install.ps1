@@ -43,13 +43,15 @@ Get-Process zebar -ErrorAction SilentlyContinue | Stop-Process -Force
 Install-GlzrMsi 'glazewm' $glazewmVersion "standalone-glazewm-$glazewmVersion-x64.msi" 'GlazeWM'
 Install-GlzrMsi 'zebar' $zebarVersion "zebar-$zebarVersion-opt1-x64.msi" 'Zebar'
 
-# 3. Zebar only picks its GlazeWM bar on first run if GlazeWM is installed per
-#    machine, so set it explicitly. Left alone if you have already customised it.
-$zebarSettings = Join-Path $env:USERPROFILE '.glzr\zebar\settings.json'
-if (-not (Test-Path $zebarSettings)) {
-    New-Item -ItemType Directory -Force (Split-Path $zebarSettings) | Out-Null
-    Set-Content $zebarSettings -Encoding ASCII -Value '{ "startupConfigs": [{ "pack": "glzr-io.starter", "widget": "with-glazewm", "preset": "default" }] }'
+# 3. Put the GlazeWM CLI on PATH, as the official installer does. Zebar's first
+#    run checks `where glazewm` to choose its GlazeWM bar over the plain one.
+$cliDir = Join-Path $programs 'GlazeWM\cli'
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (($userPath -split ';') -notcontains $cliDir) {
+    $newPath = if ($userPath) { "$($userPath.TrimEnd(';'));$cliDir" } else { $cliDir }
+    [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
 }
+$env:Path = "$env:Path;$cliDir"
 
 # 4. Point GlazeWM at this repo's config.
 [Environment]::SetEnvironmentVariable('GLAZEWM_CONFIG_PATH', $config, 'User')
