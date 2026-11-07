@@ -4,8 +4,9 @@
 # Reload after editing: Win+Shift+R.
 
 general:
-  startup_commands: []
-  shutdown_commands: []
+  # Zebar is the status bar (installed by install.ps1).
+  startup_commands: ['shell-exec %LOCALAPPDATA%\Programs\Zebar\zebar.exe']
+  shutdown_commands: ['shell-exec taskkill /IM zebar.exe /F']
   config_reload_commands: []
 
   # Hyprland `follow_mouse = 1`. Set to false to focus by click only.
@@ -25,7 +26,8 @@ gaps:
   # Hyprland `gaps_in = 5` is per window, so 10px between two windows.
   inner_gap: '10px'
   outer_gap:
-    top: '4px'
+    # Zebar's bar is 40px tall.
+    top: '44px'
     right: '4px'
     bottom: '4px'
     left: '4px'
@@ -54,10 +56,9 @@ window_effects:
     corner_style:
       enabled: true
       style: 'rounded'
-    # Hyprland `inactive_opacity = 0.8`.
     transparency:
-      enabled: true
-      opacity: '80%'
+      enabled: false
+      opacity: '100%'
 
 window_behavior:
   initial_state: 'tiling'
@@ -162,11 +163,8 @@ keybindings:
     bindings: ['lwin+i']
   - commands: ['shell-exec zed']
     bindings: ['lwin+z']
-  # Opens Start by sending Ctrl+Esc. Encoded so GlazeWM's argument parsing
-  # cannot strip the quotes. Decodes to:
-  # (New-Object -ComObject WScript.Shell).SendKeys('^{ESC}')
-  - commands: ['shell-exec --hide-window powershell -NoProfile -NonInteractive -EncodedCommand KABOAGUAdwAtAE8AYgBqAGUAYwB0ACAALQBDAG8AbQBPAGIAagBlAGMAdAAgAFcAUwBjAHIAaQBwAHQALgBTAGgAZQBsAGwAKQAuAFMAZQBuAGQASwBlAHkAcwAoACcAXgB7AEUAUwBDAH0AJwApAA==']
-    bindings: ['lwin+d']
+  - commands: ['shell-exec %LOCALAPPDATA%\Programs\t3code\T3 Code (Beta).exe']
+    bindings: ['lwin+t']
 
   # GlazeWM
   - commands: ['wm-reload-config']

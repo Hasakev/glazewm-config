@@ -1,44 +1,83 @@
-# Installs GlazeWM for the current user (no admin), points it at this repo's
-# config.yaml and starts it at login. Run from the folder you intend to keep:
-# GlazeWM reads the config from here. Re-run to upgrade after changing $version.
+# Installs GlazeWM and Zebar for the current user (no admin), points GlazeWM
+# at this repo's config.yaml, starts it at login and auto-hides the taskbar.
+# Run from the folder you intend to keep: GlazeWM reads the config from here.
+# Re-run to upgrade after changing the versions below.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'  # Progress bar makes downloads very slow in PowerShell 5.1.
 
-$version = 'v3.10.1'  # v3.2.0+ needed so Win-key bindings don't pop the Start menu.
+$glazewmVersion = 'v3.10.1'  # v3.2.0+ needed so Win-key bindings don't pop the Start menu.
+$zebarVersion = 'v3.3.1'
 $config = Join-Path $PSScriptRoot 'config.yaml'
-$dir = Join-Path $env:LOCALAPPDATA 'Programs\GlazeWM'
-$exe = Join-Path $dir 'glazewm.exe'
+$programs = Join-Path $env:LOCALAPPDATA 'Programs'
+$exe = Join-Path $programs 'GlazeWM\glazewm.exe'
 
-# 1. Stop a running instance cleanly (so windows hidden on other workspaces
-#    are restored and the exe can be replaced).
-$running = Get-Process glazewm, glazewm-watcher -ErrorAction SilentlyContinue
-if ($running) {
-    & (Join-Path $dir 'cli\glazewm.exe') command wm-exit
-    $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+# Unpacks a signed GLZR release MSI into %LOCALAPPDATA%\Programs\<Name>. The
+# MSIs install per machine (needs admin); an administrative unpack (/a) does not.
+function Install-GlzrMsi($repo, $version, $asset, $name) {
+    $tmp = Join-Path $env:TEMP "$repo-$version"
+    $msi = Join-Path $tmp 'setup.msi'
+    New-Item -ItemType Directory -Force $tmp | Out-Null
+    Invoke-WebRequest "https://github.com/glzr-io/$repo/releases/download/$version/$asset" -OutFile $msi -UseBasicParsing
+    $sig = Get-AuthenticodeSignature $msi
+    if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike '*GLZR SOFTWARE*') { throw "$asset is not signed by GLZR Software." }
+    $p = Start-Process msiexec -ArgumentList '/a', "`"$msi`"", '/qn', "TARGETDIR=`"$tmp\x`"" -Wait -PassThru
+    if ($p.ExitCode -ne 0) { throw "Unpacking $asset failed with exit code $($p.ExitCode)." }
+    $src = Get-ChildItem "$tmp\x" -Directory -Recurse -Filter $name | Select-Object -First 1
+    if (-not $src) { throw "No $name folder found in $asset." }
+    $dest = Join-Path $programs $name
+    New-Item -ItemType Directory -Force $dest | Out-Null
+    Copy-Item "$($src.FullName)\*" $dest -Recurse -Force
+    Remove-Item $tmp -Recurse -Force
 }
 
-# 2. Unpack the official MSI into the user folder. The MSI itself installs
-#    per machine (needs admin); an administrative unpack (/a) does not.
-$tmp = Join-Path $env:TEMP "glazewm-$version"
-$msi = Join-Path $tmp 'glazewm.msi'
-New-Item -ItemType Directory -Force $tmp | Out-Null
-Invoke-WebRequest "https://github.com/glzr-io/glazewm/releases/download/$version/standalone-glazewm-$version-x64.msi" -OutFile $msi -UseBasicParsing
-$sig = Get-AuthenticodeSignature $msi
-if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike '*GLZR SOFTWARE*') { throw "MSI is not signed by GLZR Software: $msi" }
-$p = Start-Process msiexec -ArgumentList '/a', "`"$msi`"", '/qn', "TARGETDIR=`"$tmp\x`"" -Wait -PassThru
-if ($p.ExitCode -ne 0) { throw "msiexec unpack failed with exit code $($p.ExitCode)." }
-New-Item -ItemType Directory -Force $dir | Out-Null
-Copy-Item "$tmp\x\PFiles64\glzr.io\GlazeWM\*" $dir -Recurse -Force
-Remove-Item $tmp -Recurse -Force
+# 1. Stop running instances cleanly, so windows hidden on other workspaces are
+#    restored and the files can be replaced. Exiting GlazeWM also stops Zebar.
+$running = Get-Process glazewm, glazewm-watcher -ErrorAction SilentlyContinue
+if ($running) {
+    & (Join-Path $programs 'GlazeWM\cli\glazewm.exe') command wm-exit
+    $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+}
+Get-Process zebar -ErrorAction SilentlyContinue | Stop-Process -Force
 
-# 3. Point GlazeWM at this repo's config.
+# 2. Install.
+Install-GlzrMsi 'glazewm' $glazewmVersion "standalone-glazewm-$glazewmVersion-x64.msi" 'GlazeWM'
+Install-GlzrMsi 'zebar' $zebarVersion "zebar-$zebarVersion-opt1-x64.msi" 'Zebar'
+
+# 3. Zebar only picks its GlazeWM bar on first run if GlazeWM is installed per
+#    machine, so set it explicitly. Left alone if you have already customised it.
+$zebarSettings = Join-Path $env:USERPROFILE '.glzr\zebar\settings.json'
+if (-not (Test-Path $zebarSettings)) {
+    New-Item -ItemType Directory -Force (Split-Path $zebarSettings) | Out-Null
+    Set-Content $zebarSettings -Encoding ASCII -Value '{ "startupConfigs": [{ "pack": "glzr-io.starter", "widget": "with-glazewm", "preset": "default" }] }'
+}
+
+# 4. Point GlazeWM at this repo's config.
 [Environment]::SetEnvironmentVariable('GLAZEWM_CONFIG_PATH', $config, 'User')
 $env:GLAZEWM_CONFIG_PATH = $config
 
-# 4. Start at login. Same registry value as the tray's "Run on system startup",
+# 5. Start at login. Same registry value as the tray's "Run on system startup",
 #    so the tray toggle stays in sync and GlazeWM never starts twice.
 Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'GlazeWM' -Value "`"$exe`""
 
-# 5. Start it now.
+# 6. Start-menu entry with Ctrl+Alt+G, to start GlazeWM again after Win+Esc.
+$lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Programs')) 'GlazeWM.lnk'))
+$lnk.TargetPath = $exe
+$lnk.Hotkey = 'Ctrl+Alt+G'
+$lnk.Save()
+
+# 7. Auto-hide the taskbar (Zebar is the bar; the taskbar still slides up on
+#    hover for the system tray). Same as the Settings toggle, no Explorer restart.
+Add-Type -Namespace Win32 -Name AppBar -MemberDefinition @'
+[StructLayout(LayoutKind.Sequential)] public struct APPBARDATA {
+    public int cbSize; public IntPtr hWnd; public uint uCallbackMessage; public uint uEdge;
+    public int left, top, right, bottom; public IntPtr lParam; }
+[DllImport("shell32.dll")] public static extern UIntPtr SHAppBarMessage(uint msg, ref APPBARDATA data);
+'@
+$abd = New-Object Win32.AppBar+APPBARDATA
+$abd.cbSize = [Runtime.InteropServices.Marshal]::SizeOf($abd)
+$abd.lParam = [IntPtr]1  # ABS_AUTOHIDE
+[Win32.AppBar]::SHAppBarMessage(0xA, [ref]$abd) | Out-Null  # ABM_SETSTATE
+
+# 8. Start GlazeWM now (it starts Zebar via startup_commands).
 Start-Process $exe -ArgumentList 'start', "--config=`"$config`""
-Write-Host "GlazeWM $version running from $dir with $config"
+Write-Host "GlazeWM $glazewmVersion and Zebar $zebarVersion running from $programs with $config"
