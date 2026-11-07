@@ -4,9 +4,14 @@
 # Reload after editing: Win+Shift+R.
 
 general:
-  # Zebar is the status bar (installed by install.ps1).
-  startup_commands: ['shell-exec %LOCALAPPDATA%\Programs\Zebar\zebar.exe']
-  shutdown_commands: ['shell-exec taskkill /IM zebar.exe /F']
+  # Zebar is the status bar; AltSnap adds Win+drag move and Win+right-drag
+  # resize. Both are installed by install.ps1 and run only while GlazeWM does.
+  startup_commands:
+    - 'shell-exec %LOCALAPPDATA%\Programs\Zebar\zebar.exe'
+    - 'shell-exec %LOCALAPPDATA%\Programs\AltSnap\AltSnap.exe'
+  shutdown_commands:
+    - 'shell-exec taskkill /IM zebar.exe /F'
+    - 'shell-exec taskkill /IM AltSnap.exe /F'
   config_reload_commands: []
 
   # Hyprland `follow_mouse = 1`. Set to false to focus by click only.

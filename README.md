@@ -10,13 +10,14 @@ A Hyprland-style keymap and look for Windows 11, built on [GlazeWM](https://gith
 The script:
 
 - unpacks the signed GlazeWM and Zebar release MSIs into `%LOCALAPPDATA%\Programs`;
+- unpacks the portable [AltSnap](https://github.com/RamonUnch/AltSnap) build there too (checked against a pinned SHA-256, as AltSnap is not code-signed) and sets it to use the Win key;
 - adds the GlazeWM CLI to your `PATH` (as the official installer does);
 - links this repo's `zebar` folder into `%USERPROFILE%\.glzr\zebar\hypr-bar` and sets it as the only bar Zebar starts (this replaces any choice made in Zebar's own settings);
 - sets `GLAZEWM_CONFIG_PATH` to this folder's `config.yaml`;
 - starts GlazeWM at login (the same setting as the tray's "Run on system startup");
 - adds a GlazeWM Start-menu entry with the shortcut `Ctrl+Alt+G`;
 - sets the Windows taskbar to auto-hide (it still slides up on hover, for the system tray);
-- starts GlazeWM, which starts Zebar.
+- starts GlazeWM, which starts Zebar and AltSnap.
 
 To upgrade, change the versions at the top of `install.ps1` and run it again.
 
@@ -44,6 +45,10 @@ Once running, GlazeWM tiles every open window. `Win+Shift+P` pauses and resumes 
 | `Win+Shift+R` | Reload config |
 | `Win+Shift+P` | Pause GlazeWM |
 | `Win+Esc` | Exit GlazeWM |
+| `Win`+drag | Move window (a tiled window is re-tiled where it is dropped) |
+| `Win`+right-drag | Resize window |
+
+Win+drag comes from AltSnap, which GlazeWM starts and stops with itself. It cannot drag apps running as administrator. `install.ps1` resets AltSnap's settings each time it runs, so make lasting changes in its settings block rather than in AltSnap's own settings window.
 
 Left to Windows: `Win+L` lock, `Win+V` clipboard, `Win+A` quick settings, `Win+N` notifications, `Win+W` widgets, `Win+E` Explorer, `Win+R` Run, `Print` and media keys.
 
@@ -72,7 +77,7 @@ Exit GlazeWM (`Win+Esc`), turn off "Automatically hide the taskbar" in Settings,
 ```powershell
 # Remove the bar link first, without -Recurse, so the repo's files are kept.
 (Get-Item "$env:USERPROFILE\.glzr\zebar\hypr-bar").Delete()
-Remove-Item "$env:LOCALAPPDATA\Programs\GlazeWM", "$env:LOCALAPPDATA\Programs\Zebar" -Recurse
+Remove-Item "$env:LOCALAPPDATA\Programs\GlazeWM", "$env:LOCALAPPDATA\Programs\Zebar", "$env:LOCALAPPDATA\Programs\AltSnap" -Recurse
 Remove-Item "$([Environment]::GetFolderPath('Programs'))\GlazeWM.lnk"
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name GlazeWM
 [Environment]::SetEnvironmentVariable('GLAZEWM_CONFIG_PATH', $null, 'User')

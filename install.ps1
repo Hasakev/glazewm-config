@@ -1,4 +1,4 @@
-# Installs GlazeWM and Zebar for the current user (no admin), points GlazeWM
+# Installs GlazeWM, Zebar and AltSnap for the current user (no admin), points GlazeWM
 # at this repo's config.yaml, starts it at login and auto-hides the taskbar.
 # Run from the folder you intend to keep: GlazeWM reads the config from here.
 # Re-run to upgrade after changing the versions below.
@@ -7,6 +7,10 @@ $ProgressPreference = 'SilentlyContinue'  # Progress bar makes downloads very sl
 
 $glazewmVersion = 'v3.10.1'  # v3.2.0+ needed so Win-key bindings don't pop the Start menu.
 $zebarVersion = 'v3.3.1'
+$altSnapVersion = '1.68'
+# AltSnap is not code-signed, so the download is checked against this hash.
+# Take it from the release page's asset list when changing the version.
+$altSnapSha256 = '7DB3DAD3746E7B23857DB92FC05EE2D3E17EEE1B28E237709A612366BA909C79'
 $config = Join-Path $PSScriptRoot 'config.yaml'
 $programs = Join-Path $env:LOCALAPPDATA 'Programs'
 $exe = Join-Path $programs 'GlazeWM\glazewm.exe'
@@ -34,14 +38,39 @@ function Install-GlzrMsi($repo, $version, $asset, $name) {
 #    restored and the files can be replaced. Exiting GlazeWM also stops Zebar.
 $running = Get-Process glazewm, glazewm-watcher -ErrorAction SilentlyContinue
 if ($running) {
-    & (Join-Path $programs 'GlazeWM\cli\glazewm.exe') command wm-exit
+    $cli = Start-Process (Join-Path $programs 'GlazeWM\cli\glazewm.exe') -ArgumentList 'command', 'wm-exit' -NoNewWindow -PassThru
+    # A hung GlazeWM never answers, so force it closed after 15 seconds. Its
+    # watcher process (left running) then restores any hidden windows.
+    if (-not $cli.WaitForExit(15000)) {
+        $cli.Kill()
+        $running | Where-Object Name -eq 'glazewm' | Stop-Process -Force -ErrorAction SilentlyContinue
+    }
     $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
 }
-Get-Process zebar -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process zebar, AltSnap -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # 2. Install.
 Install-GlzrMsi 'glazewm' $glazewmVersion "standalone-glazewm-$glazewmVersion-x64.msi" 'GlazeWM'
 Install-GlzrMsi 'zebar' $zebarVersion "zebar-$zebarVersion-opt1-x64.msi" 'Zebar'
+
+# 2b. AltSnap (Win+drag to move, Win+right-drag to resize), portable build.
+#     It reports drags the same way a title-bar drag does, so GlazeWM re-tiles
+#     the window where it is dropped.
+$zip = Join-Path $env:TEMP "AltSnap$altSnapVersion.zip"
+Invoke-WebRequest "https://github.com/RamonUnch/AltSnap/releases/download/$altSnapVersion/AltSnap${altSnapVersion}bin_x64.zip" -OutFile $zip -UseBasicParsing
+if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $altSnapSha256) { throw "AltSnap $altSnapVersion download does not match the expected hash." }
+Expand-Archive $zip (Join-Path $programs 'AltSnap') -Force
+Remove-Item $zip
+# Settings on top of AltSnap's defaults (its AltSnap.ini is reset on every run):
+# Win instead of Alt as the drag key; no snapping of its own, GlazeWM places
+# windows; no title-bar actions without Win (scroll rolls up, middle-click
+# sends to back).
+Add-Type -Namespace Win32 -Name Ini -MemberDefinition '[DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern bool WritePrivateProfileString(string section, string key, string value, string path);'
+$altSnapIni = Join-Path $programs 'AltSnap\AltSnap.ini'
+foreach ($s in @('Input', 'Hotkeys', '5B 5C'), @('General', 'Aero', '0'), @('General', 'AutoSnap', '0'),
+               @('Input', 'ScrollT', 'Nothing'), @('Input', 'MMBT', 'Nothing')) {
+    if (-not [Win32.Ini]::WritePrivateProfileString($s[0], $s[1], $s[2], $altSnapIni)) { throw "Could not write $($s[1]) to $altSnapIni." }
+}
 
 # 3. Put the GlazeWM CLI on PATH, as the official installer does. Zebar's first
 #    run checks `where glazewm` to choose its GlazeWM bar over the plain one.
@@ -100,6 +129,6 @@ $abd.cbSize = [Runtime.InteropServices.Marshal]::SizeOf($abd)
 $abd.lParam = [IntPtr]1  # ABS_AUTOHIDE
 [Win32.AppBar]::SHAppBarMessage(0xA, [ref]$abd) | Out-Null  # ABM_SETSTATE
 
-# 8. Start GlazeWM now (it starts Zebar via startup_commands).
+# 8. Start GlazeWM now (it starts Zebar and AltSnap via startup_commands).
 Start-Process $exe -ArgumentList 'start', "--config=`"$config`""
-Write-Host "GlazeWM $glazewmVersion and Zebar $zebarVersion running from $programs with $config"
+Write-Host "GlazeWM $glazewmVersion, Zebar $zebarVersion and AltSnap $altSnapVersion running from $programs with $config"
