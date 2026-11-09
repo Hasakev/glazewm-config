@@ -1,5 +1,5 @@
 # Installs GlazeWM, Zebar and AltSnap for the current user (no admin), points GlazeWM
-# at this repo's config.yaml, starts it at login and auto-hides the taskbar.
+# at this repo's config.yaml, starts it at login and keeps the taskbar shown.
 # Run from the folder you intend to keep: GlazeWM reads the config from here.
 # Re-run to upgrade after changing the versions below.
 $ErrorActionPreference = 'Stop'
@@ -116,8 +116,8 @@ $lnk.TargetPath = $exe
 $lnk.Hotkey = 'Ctrl+Alt+G'
 $lnk.Save()
 
-# 7. Auto-hide the taskbar (Zebar is the bar; the taskbar still slides up on
-#    hover for the system tray). Same as the Settings toggle, no Explorer restart.
+# 7. Keep the taskbar shown: turn auto-hide off (earlier versions of this
+#    script turned it on). Same as the Settings toggle, no Explorer restart.
 Add-Type -Namespace Win32 -Name AppBar -MemberDefinition @'
 [StructLayout(LayoutKind.Sequential)] public struct APPBARDATA {
     public int cbSize; public IntPtr hWnd; public uint uCallbackMessage; public uint uEdge;
@@ -126,7 +126,7 @@ Add-Type -Namespace Win32 -Name AppBar -MemberDefinition @'
 '@
 $abd = New-Object Win32.AppBar+APPBARDATA
 $abd.cbSize = [Runtime.InteropServices.Marshal]::SizeOf($abd)
-$abd.lParam = [IntPtr]1  # ABS_AUTOHIDE
+$abd.lParam = [IntPtr]0  # No ABS_AUTOHIDE flag: auto-hide off
 [Win32.AppBar]::SHAppBarMessage(0xA, [ref]$abd) | Out-Null  # ABM_SETSTATE
 
 # 8. Start GlazeWM now (it starts Zebar and AltSnap via startup_commands).

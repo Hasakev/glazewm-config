@@ -16,7 +16,7 @@ The script:
 - sets `GLAZEWM_CONFIG_PATH` to this folder's `config.yaml`;
 - starts GlazeWM at login (the same setting as the tray's "Run on system startup");
 - adds a GlazeWM Start-menu entry with the shortcut `Ctrl+Alt+G`;
-- sets the Windows taskbar to auto-hide (it still slides up on hover, for the system tray);
+- turns off taskbar auto-hide, so the Windows taskbar stays shown;
 - starts GlazeWM, which starts Zebar and AltSnap.
 
 To upgrade, change the versions at the top of `install.ps1` and run it again.
@@ -62,8 +62,6 @@ The Zebar bar (`zebar/bar.html`, `zebar/styles.css`) shows, from left to right:
 
 The power button opens Lock, Sleep, Sign out, Restart and Shut down. Sign out, Restart and Shut down need a second click within 4 seconds.
 
-The taskbar stays on auto-hide: Windows 11 brings it back when Start opens or the mouse touches the bottom edge, so it cannot be hidden permanently without patching Explorer.
-
 Edits to the bar take effect when Zebar restarts. GlazeWM starts and stops Zebar, so press `Win+Esc` then `Ctrl+Alt+G`.
 
 ## Editing
@@ -72,7 +70,7 @@ Edit `config.yaml` in this folder, then press `Win+Shift+R`. GlazeWM shows an er
 
 ## Uninstall
 
-Exit GlazeWM (`Win+Esc`), turn off "Automatically hide the taskbar" in Settings, then in PowerShell:
+Exit GlazeWM (`Win+Esc`), then in PowerShell:
 
 ```powershell
 # Remove the bar link first, without -Recurse, so the repo's files are kept.
